@@ -8,6 +8,7 @@ from materials.models import Course, Lesson, Subscription
 from materials.pagination import MaterialsPagination
 from materials.permissions import IsModer, IsOwner
 from materials.serializers import CourseSerializer, LessonSerializer
+from materials.tasks import update_newsletter
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -26,6 +27,10 @@ class CourseViewSet(viewsets.ModelViewSet):
         elif self.action in ('update', 'retrieve', 'partial_update',):
             self.permission_classes = (IsModer, IsOwner)
         return super().get_permissions()
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+        update_newsletter.delay(course.pk)
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
